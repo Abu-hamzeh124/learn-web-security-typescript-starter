@@ -25,6 +25,7 @@ import {
   rpName,
   storePasskeyCredential,
   updatePasskeyCounter,
+  verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "../auth/passkeys.ts";
 import { findUserById } from "../auth/users.ts";
@@ -34,6 +35,7 @@ import {
 } from "../views/passkey.ts";
 import { sendErrorPage } from "../errors.ts";
 import { logEvent } from "../logger.ts";
+import { verify } from "node:crypto";
 
 type AuthenticationResponseVerifier =
   typeof import("../auth/passkeys.ts").verifyAuthenticationResponse;
@@ -120,11 +122,30 @@ export function createPasskeyRouter(deps: Dependencies): Router {
     let verification;
     try {
       verification = {
-        verified: false,
-        authenticationInfo: {
-          newCounter: passkeyVerificationInput.credential.counter,
-        },
+        response: passkeyVerificationInput.response,
+        expectedChallenge: stored.challenge,
+        expectedOrigin: rpOrigin,
+        expectedRPID: rpID,
+        requireUserVerification: true,
+        credential: passkeyVerificationInput.credential,
       };
+      const verifAuth = await verifyAuthenticationResponse(verification);
+      if (!verifAuth.verified) {
+        logEvent("passkey_login_failed", { credentialId });
+        res
+          .status(401)
+          .type("html")
+          .send(
+            renderPasskeyLoginPage("Passkey verification failed.", returnTo),
+          );
+        return;
+      }
+
+      updatePasskeyCounter(
+        db,
+        credential.credential_id,
+        verifAuth.authenticationInfo.newCounter,
+      );
     } catch (error) {
       logEvent("passkey_login_failed", { credentialId, error: String(error) });
       res
@@ -133,21 +154,6 @@ export function createPasskeyRouter(deps: Dependencies): Router {
         .send(renderPasskeyLoginPage("Passkey verification failed.", returnTo));
       return;
     }
-
-    if (!verification.verified) {
-      logEvent("passkey_login_failed", { credentialId });
-      res
-        .status(401)
-        .type("html")
-        .send(renderPasskeyLoginPage("Passkey verification failed.", returnTo));
-      return;
-    }
-
-    updatePasskeyCounter(
-      db,
-      credential.credential_id,
-      verification.authenticationInfo.newCounter,
-    );
 
     const user = findUserById(db, credential.user_id);
     if (!user) {

@@ -8,6 +8,8 @@ import {
   listOrdersForUser,
 } from "../orders/index.ts";
 import { listAllProducts } from "../products.ts";
+import { findApiKey } from "../auth/apiKeys.ts";
+import { readTaxDocument } from "../uploads/taxDocuments.ts";
 
 export function createApiRouter(deps: Dependencies): Router {
   const { db } = deps;
@@ -50,6 +52,21 @@ export function createApiRouter(deps: Dependencies): Router {
   });
 
   router.get("/api/integrations/warehouse/orders", (_req, res) => {
+    const reqKey = _req.header("x-api-key");
+    if (!reqKey) {
+      res.status(401).send({ error: "invalid key" });
+      return;
+    } 
+    const key = findApiKey(db, reqKey);
+    if (!key) {
+      res.status(401).send({ error: "invalid or missing key" });
+      return;
+    } 
+    if (key.scope !== "orders:read") {
+      res.status(403).send({ error: "invalid scope" });
+      return;
+    }
+
     const orders = listAllOrders(db).map((order) => ({
       id: order.id,
       status: order.status,

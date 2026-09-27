@@ -21,7 +21,7 @@ export type User = {
 };
 
 export function normalizeEmail(email: string): string {
-  return email;
+  return email.trim().toLowerCase();
 }
 
 export async function createUser(
@@ -30,7 +30,7 @@ export async function createUser(
   displayName: string,
   password: string,
 ): Promise<User> {
-  const passwordHash = await hashPassword(password);
+  const passwordHash = hashPassword(password);
   const result = db
     .prepare(
       `
