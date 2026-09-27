@@ -9,7 +9,6 @@ import {
 } from "../orders/index.ts";
 import { listAllProducts } from "../products.ts";
 import { findApiKey } from "../auth/apiKeys.ts";
-import { readTaxDocument } from "../uploads/taxDocuments.ts";
 
 export function createApiRouter(deps: Dependencies): Router {
   const { db } = deps;

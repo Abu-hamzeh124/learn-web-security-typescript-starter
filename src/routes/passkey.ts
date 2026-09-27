@@ -35,7 +35,6 @@ import {
 } from "../views/passkey.ts";
 import { sendErrorPage } from "../errors.ts";
 import { logEvent } from "../logger.ts";
-import { verify } from "node:crypto";
 
 type AuthenticationResponseVerifier =
   typeof import("../auth/passkeys.ts").verifyAuthenticationResponse;
