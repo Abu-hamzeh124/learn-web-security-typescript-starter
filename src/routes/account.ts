@@ -288,7 +288,7 @@ export function createAccountRouter(deps: Dependencies): Router {
     const current = requireAuth(db, req, res);
     if (!current) return;
     const review = requireOwnedReview(db, req, res);
-    if (!review) return;
+    if (!review || review.user_id !== current.user.id) return;
     res
       .type("html")
       .send(
@@ -313,7 +313,7 @@ export function createAccountRouter(deps: Dependencies): Router {
       return;
     }
     const review = requireOwnedReview(db, req, res);
-    if (!review) return;
+    if (!review || review.user_id !== current.user.id) return;
     const rating = Number(req.body.rating);
     const body = parseReviewBody(req.body.body);
     if (
@@ -352,7 +352,7 @@ export function createAccountRouter(deps: Dependencies): Router {
       return;
     }
     const review = requireOwnedReview(db, req, res);
-    if (!review) return;
+    if (!review || review.user_id !== current.user.id) return;
     deleteReview(db, review.id);
     res.redirect("/account/reviews");
   });
