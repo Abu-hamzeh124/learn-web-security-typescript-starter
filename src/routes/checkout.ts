@@ -22,6 +22,7 @@ import {
   findOrderById,
   InsufficientInventoryError,
 } from "../orders/index.ts";
+import { csrfTokensMatch } from "../csrf.ts";
 
 export function sendFulfillmentTimeout(
   response: Response,
@@ -81,6 +82,10 @@ export function createCheckoutRouter(deps: Dependencies): Router {
       return;
     }
 
+    if (!csrfTokensMatch(current.session.csrf_token, req.body.csrfToken)) {
+      res.status(403).type("html").send();
+      return;
+    }
     let items = listCartItems(db, current.user.id);
     if (items.length === 0) {
       res.redirect("/cart");

@@ -21,6 +21,8 @@ import { createStorefrontRouter } from "./routes/storefront.ts";
 import { createSupportRouter } from "./routes/support.ts";
 import { migrateSensitiveDataAtRest } from "./storage/migrations.ts";
 
+const nonce = randomBytes(16).toString("base64");
+
 const apiCors: RequestHandler = (req, res, next) => {
   const origin = req.header("Origin");
 
@@ -35,6 +37,7 @@ const apiCors: RequestHandler = (req, res, next) => {
     "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader(`Content-Security-Policy`, `default-src 'self'; script-src 'self'; style-src 'self' 'nonce-${nonce}'; img-src 'self' data:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'`);
 
   if (req.method === "OPTIONS") {
     res.sendStatus(204);
